@@ -1,0 +1,38 @@
+[package]
+name = "pbring"
+version = "0.1.0"
+edition = "2021"
+description = "Secure macOS clipboard history daemon"
+
+[[bin]]
+name = "pbring"
+path = "src/bin/pbring.rs"
+
+[[bin]]
+name = "pbringd"
+path = "src/bin/pbringd.rs"
+
+[dependencies]
+aes-gcm = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+dirs = "6"
+env_logger = "0.11"
+libc = "0.2.183"
+log = "0.4"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", features = ["NSPasteboard", "NSPasteboardItem"] }
+objc2-foundation = { version = "0.3", features = ["NSString", "NSArray", "NSData", "NSObject"] }
+rand = "0.8"
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+signal-hook = "0.3"
+thiserror = "2"
+toml = "0.8"
+zeroize = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+assert_cmd = "2.2.0"
+predicates = "3.1.4"
+tempfile = "3.27.0"
