@@ -22,11 +22,7 @@ impl Default for Config {
             max_entries: 1000,
             ttl_seconds: 86400,
             max_entry_bytes: 10_485_760,
-            record_types: vec![
-                "text".to_string(),
-                "image".to_string(),
-                "file".to_string(),
-            ],
+            record_types: vec!["text".to_string(), "image".to_string(), "file".to_string()],
             extra_ignored_types: vec![],
             ignored_apps: vec![],
             preview_max_chars: 100,

@@ -123,29 +123,26 @@ impl PasteboardReader {
     fn read_content(&self, pb: &NSPasteboard, types: &[String]) -> Option<PasteboardContent> {
         let source_app = self.get_source_string(pb);
 
-        // Text
-        if types.iter().any(|t| t == NS_STRING_PBOARD_TYPE) {
-            let pb_type = NSString::from_str(NS_STRING_PBOARD_TYPE);
+        // File URL (check before text -- Finder sets both file-url and utf8-plain-text)
+        if types.iter().any(|t| t == NS_FILE_URL_TYPE) {
+            let pb_type = NSString::from_str(NS_FILE_URL_TYPE);
             if let Some(s) = pb.stringForType(&pb_type) {
-                let text = s.to_string();
-                if text.is_empty() {
-                    return None;
+                let url = s.to_string();
+                if !url.is_empty() {
+                    let path = url.strip_prefix("file://").unwrap_or(&url);
+                    let preview = format!("[file {}]", path);
+                    return Some(PasteboardContent {
+                        data: url.into_bytes(),
+                        media_type: MediaType::File,
+                        preview,
+                        source_app,
+                    });
                 }
-                let preview = generate_text_preview(&text, self.preview_max_chars);
-                return Some(PasteboardContent {
-                    data: text.into_bytes(),
-                    media_type: MediaType::Text,
-                    preview,
-                    source_app,
-                });
             }
         }
 
         // Image (PNG preferred, then TIFF)
-        for (img_type, label) in [
-            (NS_PNG_PBOARD_TYPE, "PNG"),
-            (NS_TIFF_PBOARD_TYPE, "TIFF"),
-        ] {
+        for (img_type, label) in [(NS_PNG_PBOARD_TYPE, "PNG"), (NS_TIFF_PBOARD_TYPE, "TIFF")] {
             if types.iter().any(|t| t == img_type) {
                 let pb_type = NSString::from_str(img_type);
                 if let Some(data) = pb.dataForType(&pb_type) {
@@ -164,21 +161,21 @@ impl PasteboardReader {
             }
         }
 
-        // File URL
-        if types.iter().any(|t| t == NS_FILE_URL_TYPE) {
-            let pb_type = NSString::from_str(NS_FILE_URL_TYPE);
+        // Text
+        if types.iter().any(|t| t == NS_STRING_PBOARD_TYPE) {
+            let pb_type = NSString::from_str(NS_STRING_PBOARD_TYPE);
             if let Some(s) = pb.stringForType(&pb_type) {
-                let url = s.to_string();
-                if !url.is_empty() {
-                    let path = url.strip_prefix("file://").unwrap_or(&url);
-                    let preview = format!("[file {}]", path);
-                    return Some(PasteboardContent {
-                        data: url.into_bytes(),
-                        media_type: MediaType::File,
-                        preview,
-                        source_app,
-                    });
+                let text = s.to_string();
+                if text.is_empty() {
+                    return None;
                 }
+                let preview = generate_text_preview(&text, self.preview_max_chars);
+                return Some(PasteboardContent {
+                    data: text.into_bytes(),
+                    media_type: MediaType::Text,
+                    preview,
+                    source_app,
+                });
             }
         }
 
@@ -188,9 +185,8 @@ impl PasteboardReader {
 
 pub fn generate_text_preview(text: &str, max_chars: usize) -> String {
     let mut preview = String::new();
-    let mut char_count = 0;
-    for c in text.chars() {
-        if char_count >= max_chars {
+    for (i, c) in text.chars().enumerate() {
+        if i >= max_chars {
             break;
         }
         match c {
@@ -199,7 +195,6 @@ pub fn generate_text_preview(text: &str, max_chars: usize) -> String {
             '\t' => preview.push_str("\\t"),
             _ => preview.push(c),
         }
-        char_count += 1;
     }
     preview
 }

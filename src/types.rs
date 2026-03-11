@@ -20,14 +20,16 @@ impl fmt::Display for MediaType {
     }
 }
 
-impl MediaType {
-    pub fn from_str(s: &str) -> Option<MediaType> {
+impl std::str::FromStr for MediaType {
+    type Err = ();
+
+    fn from_str(s: &str) -> std::result::Result<MediaType, ()> {
         match s {
-            "text" => Some(MediaType::Text),
-            "image" => Some(MediaType::Image),
-            "file" => Some(MediaType::File),
-            "other" => Some(MediaType::Other),
-            _ => None,
+            "text" => Ok(MediaType::Text),
+            "image" => Ok(MediaType::Image),
+            "file" => Ok(MediaType::File),
+            "other" => Ok(MediaType::Other),
+            _ => Err(()),
         }
     }
 }

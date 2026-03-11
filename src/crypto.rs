@@ -56,7 +56,8 @@ impl EncryptionKey {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            if stderr.contains("could not be found") || stderr.contains("SecKeychainSearchCopyNext") {
+            if stderr.contains("could not be found") || stderr.contains("SecKeychainSearchCopyNext")
+            {
                 return Err(PbringError::Keychain("key not found in keychain".into()));
             }
             if stderr.contains("User interaction is not allowed")
@@ -200,10 +201,7 @@ fn base64_decode(input: &str) -> Result<Vec<u8>> {
     let mut result = Vec::new();
 
     for chunk in bytes.chunks(4) {
-        let vals: Vec<u8> = chunk
-            .iter()
-            .filter_map(|&b| char_to_val(b))
-            .collect();
+        let vals: Vec<u8> = chunk.iter().filter_map(|&b| char_to_val(b)).collect();
 
         if vals.is_empty() {
             continue;
