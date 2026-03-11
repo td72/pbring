@@ -1,0 +1,15 @@
+[tools]
+prek = "latest"
+
+[tasks.dev]
+description = "Build debug and restart pbringd"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+
+pkill -f 'target/debug/pbringd' 2>/dev/null && sleep 0.5 || true
+
+cargo build
+
+RUST_LOG=pbring=debug ./target/debug/pbringd
+"""
