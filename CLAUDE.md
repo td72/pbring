@@ -52,7 +52,7 @@ After the review completes, use `/review-copilot-comments` to check and address 
 ```
 src/
 ├── bin/
-│   ├── pbring.rs          # CLI (clap): list, get, delete, clear, wipe
+│   ├── pbring.rs          # CLI (clap): list, get, copy, delete, clear, wipe
 │   └── pbringd.rs         # Daemon: poll → filter → encrypt → store
 ├── lib.rs                 # Module re-exports
 ├── config.rs              # TOML config (~/.config/pbring/config.toml)

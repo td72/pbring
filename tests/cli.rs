@@ -27,6 +27,36 @@ fn cli_get_help() {
 }
 
 #[test]
+fn cli_copy_help() {
+    pbring_cmd()
+        .arg("copy")
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Copy an entry to the pasteboard"));
+}
+
+#[test]
+fn cli_copy_no_stdin() {
+    pbring_cmd()
+        .arg("copy")
+        .write_stdin("")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Error"));
+}
+
+#[test]
+fn cli_copy_invalid_id() {
+    pbring_cmd()
+        .arg("copy")
+        .write_stdin("not_a_number\n")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid ID"));
+}
+
+#[test]
 fn cli_no_subcommand() {
     pbring_cmd()
         .assert()

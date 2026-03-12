@@ -30,8 +30,8 @@ pbringd
 cp resources/com.pbring.daemon.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.pbring.daemon.plist
 
-# 履歴から選択してペースト
-pbring list | fzf | pbring get | pbcopy
+# 履歴から選択してクリップボードに復元
+pbring list | fzf | pbring copy
 ```
 
 ## コマンド
@@ -56,10 +56,18 @@ pbring list | fzf | pbring get | pbcopy
 
 ### `pbring get`
 
-stdinから1行（`<id>\t...`）を読み取り、エントリを取得・復号してstdoutに生バイト出力する。
+stdinから1行（`<id>\t...`）を読み取り、エントリを取得・復号してstdoutに生バイト出力する。他のツールへのパイプに使用。
 
 ```bash
 pbring list | head -1 | pbring get
+```
+
+### `pbring copy`
+
+stdinから1行（`<id>\t...`）を読み取り、エントリを取得・復号して正しいUTIでペーストボードに直接セットする。テキスト、画像、ファイルに対応。
+
+```bash
+pbring list | fzf | pbring copy
 ```
 
 ### `pbring delete`

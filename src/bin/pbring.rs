@@ -27,6 +27,9 @@ enum Commands {
     /// Get and output an entry by ID (reads ID from stdin)
     Get,
 
+    /// Copy an entry to the pasteboard (reads ID from stdin)
+    Copy,
+
     /// Delete an entry (reads ID from stdin)
     Delete,
 
@@ -50,6 +53,7 @@ fn run(cli: Cli) -> pbring::error::Result<()> {
     match cli.command {
         Commands::List { limit, type_filter } => cmd_list(limit, type_filter),
         Commands::Get => cmd_get(),
+        Commands::Copy => cmd_copy(),
         Commands::Delete => cmd_delete(),
         Commands::Clear => cmd_clear(),
         Commands::Wipe => cmd_wipe(),
@@ -92,6 +96,19 @@ fn parse_id_from_stdin() -> pbring::error::Result<i64> {
         .trim()
         .parse::<i64>()
         .map_err(|e| pbring::error::PbringError::Config(format!("invalid ID: {e}")))
+}
+
+fn cmd_copy() -> pbring::error::Result<()> {
+    let id = parse_id_from_stdin()?;
+    let db_path = Config::db_path();
+    let db = Database::open(&db_path)?;
+    let entry = db.get_entry(id)?;
+    let key = EncryptionKey::load_or_create()?;
+    let plaintext = key.decrypt(&entry.content, &entry.nonce)?;
+
+    pbring::pasteboard::write_to_pasteboard(&plaintext, entry.media_type)?;
+    // plaintext is Zeroizing<Vec<u8>>, will be zeroized on drop
+    Ok(())
 }
 
 fn cmd_get() -> pbring::error::Result<()> {
