@@ -36,10 +36,7 @@ fn cli_no_subcommand() {
 
 #[test]
 fn cli_invalid_subcommand() {
-    pbring_cmd()
-        .arg("nonexistent")
-        .assert()
-        .failure();
+    pbring_cmd().arg("nonexistent").assert().failure();
 }
 
 #[test]

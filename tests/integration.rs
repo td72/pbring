@@ -208,10 +208,22 @@ fn full_flow_type_filter() {
         .unwrap();
     }
 
-    assert_eq!(db.list_entries(100, Some(MediaType::Text)).unwrap().len(), 2);
-    assert_eq!(db.list_entries(100, Some(MediaType::Image)).unwrap().len(), 1);
-    assert_eq!(db.list_entries(100, Some(MediaType::File)).unwrap().len(), 1);
-    assert_eq!(db.list_entries(100, Some(MediaType::Other)).unwrap().len(), 0);
+    assert_eq!(
+        db.list_entries(100, Some(MediaType::Text)).unwrap().len(),
+        2
+    );
+    assert_eq!(
+        db.list_entries(100, Some(MediaType::Image)).unwrap().len(),
+        1
+    );
+    assert_eq!(
+        db.list_entries(100, Some(MediaType::File)).unwrap().len(),
+        1
+    );
+    assert_eq!(
+        db.list_entries(100, Some(MediaType::Other)).unwrap().len(),
+        0
+    );
 }
 
 #[test]

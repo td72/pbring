@@ -3,6 +3,14 @@ name = "pbring"
 version = "0.1.0"
 edition = "2021"
 description = "Secure macOS clipboard history daemon"
+authors = ["td72"]
+license = "MIT"
+repository = "https://github.com/td72/pbring"
+homepage = "https://github.com/td72/pbring"
+readme = "README.md"
+keywords = ["clipboard", "macos", "daemon", "security", "encryption"]
+categories = ["command-line-utilities"]
+exclude = [".github/", "tmp/"]
 
 [[bin]]
 name = "pbring"
@@ -36,3 +44,7 @@ zeroize = { version = "1", features = ["derive"] }
 assert_cmd = "2.2.0"
 predicates = "3.1.4"
 tempfile = "3.27.0"
+
+[profile.release]
+strip = true
+lto = true

@@ -2,7 +2,6 @@ use clap::{Parser, Subcommand};
 use pbring::config::Config;
 use pbring::crypto::EncryptionKey;
 use pbring::db::Database;
-use pbring::types::MediaType;
 use std::io::{self, BufRead, Write};
 
 #[derive(Parser)]
@@ -63,7 +62,7 @@ fn cmd_list(limit: usize, type_filter: Option<String>) -> pbring::error::Result<
         return Ok(());
     }
     let db = Database::open(&db_path)?;
-    let filter = type_filter.and_then(|s| MediaType::from_str(&s));
+    let filter = type_filter.and_then(|s| s.parse().ok());
     let entries = db.list_entries(limit, filter)?;
 
     let stdout = io::stdout();
@@ -85,9 +84,7 @@ fn parse_id_from_stdin() -> pbring::error::Result<i64> {
         .lock()
         .lines()
         .next()
-        .ok_or_else(|| {
-            pbring::error::PbringError::Config("no input on stdin".into())
-        })?
+        .ok_or_else(|| pbring::error::PbringError::Config("no input on stdin".into()))?
         .map_err(pbring::error::PbringError::Io)?;
 
     let id_str = line.split('\t').next().unwrap_or(&line);

@@ -4,6 +4,8 @@ use pbring::crypto::EncryptionKey;
 use pbring::db::Database;
 use pbring::pasteboard::PasteboardReader;
 use sha2::{Digest, Sha256};
+use std::fs::File;
+use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -19,8 +21,10 @@ fn main() {
 
 fn run() -> pbring::error::Result<()> {
     let config = Config::load()?;
-    info!("Config loaded (poll={}ms, max_entries={}, ttl={}s)",
-        config.poll_interval_ms, config.max_entries, config.ttl_seconds);
+    info!(
+        "Config loaded (poll={}ms, max_entries={}, ttl={}s)",
+        config.poll_interval_ms, config.max_entries, config.ttl_seconds
+    );
 
     let key = EncryptionKey::load_or_create()?;
     info!("Encryption key loaded");
@@ -33,9 +37,9 @@ fn run() -> pbring::error::Result<()> {
     reader.init_change_count();
     info!("Pasteboard reader initialized");
 
-    // Write PID file
+    // Write PID file with exclusive lock
     let pid_path = Config::pid_path();
-    write_pid_file(&pid_path)?;
+    let _pid_lock = acquire_pid_file(&pid_path)?;
     info!("PID file written to {}", pid_path.display());
 
     // Signal handling
@@ -43,9 +47,9 @@ fn run() -> pbring::error::Result<()> {
     {
         let r = running.clone();
         signal_hook::flag::register(signal_hook::consts::SIGTERM, r.clone())
-            .map_err(|e| pbring::error::PbringError::Io(e))?;
+            .map_err(pbring::error::PbringError::Io)?;
         signal_hook::flag::register(signal_hook::consts::SIGINT, r)
-            .map_err(|e| pbring::error::PbringError::Io(e))?;
+            .map_err(pbring::error::PbringError::Io)?;
     }
 
     let poll_duration = Duration::from_millis(config.poll_interval_ms);
@@ -53,7 +57,10 @@ fn run() -> pbring::error::Result<()> {
     let mut last_ttl_check = Instant::now();
     let mut last_content_hash: Option<[u8; 32]> = None;
 
-    info!("Daemon started, polling every {}ms", config.poll_interval_ms);
+    info!(
+        "Daemon started, polling every {}ms",
+        config.poll_interval_ms
+    );
 
     while running.load(Ordering::Relaxed) {
         // Poll pasteboard
@@ -61,8 +68,14 @@ fn run() -> pbring::error::Result<()> {
             // Size check
             if content.data.len() > config.max_entry_bytes {
                 info!("Skipping entry: too large ({} bytes)", content.data.len());
-            } else if !config.record_types.contains(&content.media_type.to_string()) {
-                info!("Skipping entry: type {} not in record_types", content.media_type);
+            } else if !config
+                .record_types
+                .contains(&content.media_type.to_string())
+            {
+                info!(
+                    "Skipping entry: type {} not in record_types",
+                    content.media_type
+                );
             } else {
                 // Dedup: hash comparison
                 let hash = Sha256::digest(&content.data);
@@ -86,8 +99,11 @@ fn run() -> pbring::error::Result<()> {
                                 content.source_app.as_deref(),
                             ) {
                                 Ok(id) => {
-                                    info!("Recorded entry #{id}: {} ({} bytes)",
-                                        content.media_type, content.data.len());
+                                    info!(
+                                        "Recorded entry #{id}: {} ({} bytes)",
+                                        content.media_type,
+                                        content.data.len()
+                                    );
 
                                     // Enforce max_entries
                                     if let Err(e) = db.delete_oldest_beyond(config.max_entries) {
@@ -127,29 +143,35 @@ fn run() -> pbring::error::Result<()> {
     Ok(())
 }
 
-fn write_pid_file(path: &std::path::Path) -> pbring::error::Result<()> {
+/// Acquire an exclusive lock on the PID file.
+/// Returns the locked File handle -- the lock is held for the process lifetime.
+fn acquire_pid_file(path: &std::path::Path) -> pbring::error::Result<File> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    // Check for stale PID file
-    if path.exists() {
-        if let Ok(content) = std::fs::read_to_string(path) {
-            if let Ok(pid) = content.trim().parse::<i32>() {
-                // Check if process is still running
-                let result = unsafe { libc::kill(pid, 0) };
-                if result == 0 {
-                    return Err(pbring::error::PbringError::Io(std::io::Error::new(
-                        std::io::ErrorKind::AddrInUse,
-                        format!("Another pbringd is already running (pid: {pid})"),
-                    )));
-                }
-                // Stale PID file, will be overwritten
-                info!("Removing stale PID file (pid: {pid})");
-            }
-        }
+    let file = File::options()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .read(true)
+        .open(path)?;
+
+    // Try non-blocking exclusive lock
+    let fd = std::os::unix::io::AsRawFd::as_raw_fd(&file);
+    let ret = unsafe { libc::flock(fd, libc::LOCK_EX | libc::LOCK_NB) };
+    if ret != 0 {
+        return Err(pbring::error::PbringError::Io(std::io::Error::new(
+            std::io::ErrorKind::AddrInUse,
+            "Another pbringd is already running",
+        )));
     }
 
-    std::fs::write(path, std::process::id().to_string())?;
-    Ok(())
+    // Write PID (truncate first)
+    let mut file = file;
+    file.set_len(0)?;
+    write!(file, "{}", std::process::id())?;
+    file.flush()?;
+
+    Ok(file)
 }

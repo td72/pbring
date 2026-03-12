@@ -44,6 +44,7 @@ impl Database {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn insert_entry(
         &self,
         timestamp: &str,
@@ -70,27 +71,21 @@ impl Database {
         Ok(self.conn.last_insert_rowid())
     }
 
-    pub fn list_entries(
-        &self,
-        limit: usize,
-        type_filter: Option<MediaType>,
-    ) -> Result<Vec<Entry>> {
+    pub fn list_entries(&self, limit: usize, type_filter: Option<MediaType>) -> Result<Vec<Entry>> {
         let (sql, type_str);
         let params: Vec<Box<dyn rusqlite::types::ToSql>> = if let Some(mt) = type_filter {
             type_str = mt.to_string();
             sql = "SELECT id, timestamp, media_type, preview, byte_size, source_app
                    FROM entries WHERE media_type = ?1 ORDER BY id DESC LIMIT ?2";
-            vec![
-                Box::new(type_str.clone()),
-                Box::new(limit as i64),
-            ]
+            vec![Box::new(type_str.clone()), Box::new(limit as i64)]
         } else {
             sql = "SELECT id, timestamp, media_type, preview, byte_size, source_app
                    FROM entries ORDER BY id DESC LIMIT ?1";
             vec![Box::new(limit as i64)]
         };
 
-        let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        let param_refs: Vec<&dyn rusqlite::types::ToSql> =
+            params.iter().map(|p| p.as_ref()).collect();
         let mut stmt = self.conn.prepare(sql)?;
         let entries = stmt
             .query_map(param_refs.as_slice(), |row| {
@@ -98,7 +93,7 @@ impl Database {
                 Ok(Entry {
                     id: row.get(0)?,
                     timestamp: row.get(1)?,
-                    media_type: MediaType::from_str(&mt_str).unwrap_or(MediaType::Other),
+                    media_type: mt_str.parse().unwrap_or(MediaType::Other),
                     preview: row.get(3)?,
                     byte_size: row.get(4)?,
                     source_app: row.get(5)?,
@@ -121,7 +116,7 @@ impl Database {
                     timestamp: row.get(1)?,
                     content: row.get(2)?,
                     nonce: row.get(3)?,
-                    media_type: MediaType::from_str(&mt_str).unwrap_or(MediaType::Other),
+                    media_type: mt_str.parse().unwrap_or(MediaType::Other),
                     preview: row.get(5)?,
                     byte_size: row.get(6)?,
                     source_app: row.get(7)?,
