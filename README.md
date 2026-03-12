@@ -30,8 +30,8 @@ pbringd
 cp resources/com.pbring.daemon.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.pbring.daemon.plist
 
-# Pick from history and paste
-pbring list | fzf | pbring get | pbcopy
+# Pick from history and copy to clipboard
+pbring list | fzf | pbring copy
 ```
 
 ## Commands
@@ -56,10 +56,18 @@ Daemon binary. Polls `NSPasteboard.general.changeCount` every 500ms, encrypts an
 
 ### `pbring get`
 
-Reads one line from stdin (`<id>\t...`), retrieves and decrypts the entry, and writes raw bytes to stdout.
+Reads one line from stdin (`<id>\t...`), retrieves and decrypts the entry, and writes raw bytes to stdout. Useful for piping to other tools.
 
 ```bash
 pbring list | head -1 | pbring get
+```
+
+### `pbring copy`
+
+Reads one line from stdin (`<id>\t...`), retrieves and decrypts the entry, and writes it to the system pasteboard with the correct UTI. Works with text, images, and files.
+
+```bash
+pbring list | fzf | pbring copy
 ```
 
 ### `pbring delete`

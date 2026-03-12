@@ -183,6 +183,55 @@ impl PasteboardReader {
     }
 }
 
+/// Write data to the system pasteboard with the appropriate UTI for the given media type.
+pub fn write_to_pasteboard(data: &[u8], media_type: MediaType) -> crate::error::Result<()> {
+    let pb = NSPasteboard::generalPasteboard();
+    pb.clearContents();
+
+    let uti = match media_type {
+        MediaType::Text => NS_STRING_PBOARD_TYPE,
+        MediaType::Image => {
+            // Detect format from stored preview or default to PNG
+            if data.len() >= 4 && data[0..4] == [0x89, 0x50, 0x4E, 0x47] {
+                NS_PNG_PBOARD_TYPE
+            } else {
+                NS_TIFF_PBOARD_TYPE
+            }
+        }
+        MediaType::File => NS_FILE_URL_TYPE,
+        MediaType::Other => NS_STRING_PBOARD_TYPE,
+    };
+
+    let pb_type = NSString::from_str(uti);
+
+    match media_type {
+        MediaType::Text | MediaType::File => {
+            let text = String::from_utf8(data.to_vec()).map_err(|e| {
+                crate::error::PbringError::Pasteboard(format!("invalid UTF-8: {e}"))
+            })?;
+            let ns_string = NSString::from_str(&text);
+            let success = pb.setString_forType(&ns_string, &pb_type);
+            if !success {
+                return Err(crate::error::PbringError::Pasteboard(
+                    "failed to write to pasteboard".into(),
+                ));
+            }
+        }
+        MediaType::Image | MediaType::Other => {
+            use objc2_foundation::NSData;
+            let ns_data = NSData::with_bytes(data);
+            let success = pb.setData_forType(Some(&ns_data), &pb_type);
+            if !success {
+                return Err(crate::error::PbringError::Pasteboard(
+                    "failed to write to pasteboard".into(),
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
 pub fn generate_text_preview(text: &str, max_chars: usize) -> String {
     let mut preview = String::new();
     for (i, c) in text.chars().enumerate() {
