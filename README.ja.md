@@ -31,7 +31,7 @@ cp resources/com.pbring.daemon.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.pbring.daemon.plist
 
 # 履歴から選択してペースト
-pbring list | fzf | pbring decrypt | pbcopy
+pbring list | fzf | pbring get | pbcopy
 ```
 
 ## コマンド
@@ -54,12 +54,12 @@ pbring list | fzf | pbring decrypt | pbcopy
 | `--limit N` | 表示する最大エントリ数（デフォルト: 100） |
 | `--type text\|image\|file` | メディアタイプでフィルタ |
 
-### `pbring decrypt`
+### `pbring get`
 
-stdinから1行（`<id>\t...`）を読み取り、エントリを復号してstdoutに生バイト出力する。
+stdinから1行（`<id>\t...`）を読み取り、エントリを取得・復号してstdoutに生バイト出力する。
 
 ```bash
-pbring list | head -1 | pbring decrypt
+pbring list | head -1 | pbring get
 ```
 
 ### `pbring delete`

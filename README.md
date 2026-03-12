@@ -31,7 +31,7 @@ cp resources/com.pbring.daemon.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.pbring.daemon.plist
 
 # Pick from history and paste
-pbring list | fzf | pbring decrypt | pbcopy
+pbring list | fzf | pbring get | pbcopy
 ```
 
 ## Commands
@@ -54,12 +54,12 @@ Daemon binary. Polls `NSPasteboard.general.changeCount` every 500ms, encrypts an
 | `--limit N` | Max entries to show (default: 100) |
 | `--type text\|image\|file` | Filter by media type |
 
-### `pbring decrypt`
+### `pbring get`
 
-Reads one line from stdin (`<id>\t...`), decrypts the entry, and writes raw bytes to stdout.
+Reads one line from stdin (`<id>\t...`), retrieves and decrypts the entry, and writes raw bytes to stdout.
 
 ```bash
-pbring list | head -1 | pbring decrypt
+pbring list | head -1 | pbring get
 ```
 
 ### `pbring delete`

@@ -17,13 +17,13 @@ fn cli_list_help() {
 }
 
 #[test]
-fn cli_decrypt_help() {
+fn cli_get_help() {
     pbring_cmd()
-        .arg("decrypt")
+        .arg("get")
         .arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("Decrypt"));
+        .stdout(predicate::str::contains("Get and output"));
 }
 
 #[test]
@@ -40,10 +40,10 @@ fn cli_invalid_subcommand() {
 }
 
 #[test]
-fn cli_decrypt_no_stdin() {
-    // decrypt with empty stdin should fail
+fn cli_get_no_stdin() {
+    // get with empty stdin should fail
     pbring_cmd()
-        .arg("decrypt")
+        .arg("get")
         .write_stdin("")
         .assert()
         .failure()
@@ -51,9 +51,9 @@ fn cli_decrypt_no_stdin() {
 }
 
 #[test]
-fn cli_decrypt_invalid_id() {
+fn cli_get_invalid_id() {
     pbring_cmd()
-        .arg("decrypt")
+        .arg("get")
         .write_stdin("not_a_number\n")
         .assert()
         .failure()

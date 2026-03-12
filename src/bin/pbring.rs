@@ -24,8 +24,8 @@ enum Commands {
         type_filter: Option<String>,
     },
 
-    /// Decrypt and output an entry (reads ID from stdin)
-    Decrypt,
+    /// Get and output an entry by ID (reads ID from stdin)
+    Get,
 
     /// Delete an entry (reads ID from stdin)
     Delete,
@@ -49,7 +49,7 @@ fn main() {
 fn run(cli: Cli) -> pbring::error::Result<()> {
     match cli.command {
         Commands::List { limit, type_filter } => cmd_list(limit, type_filter),
-        Commands::Decrypt => cmd_decrypt(),
+        Commands::Get => cmd_get(),
         Commands::Delete => cmd_delete(),
         Commands::Clear => cmd_clear(),
         Commands::Wipe => cmd_wipe(),
@@ -94,7 +94,7 @@ fn parse_id_from_stdin() -> pbring::error::Result<i64> {
         .map_err(|e| pbring::error::PbringError::Config(format!("invalid ID: {e}")))
 }
 
-fn cmd_decrypt() -> pbring::error::Result<()> {
+fn cmd_get() -> pbring::error::Result<()> {
     let id = parse_id_from_stdin()?;
     let db_path = Config::db_path();
     let db = Database::open(&db_path)?;
