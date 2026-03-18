@@ -208,7 +208,11 @@ pub fn write_to_pasteboard(data: &[u8], media_type: MediaType) -> crate::error::
     // Set source marker so pbringd ignores this write (loop prevention)
     let source_type = NSString::from_str(SOURCE_TYPE);
     let source_value = NSString::from_str(PBRING_BUNDLE_ID);
-    pb.setString_forType(&source_value, &source_type);
+    if !pb.setString_forType(&source_value, &source_type) {
+        return Err(crate::error::PbringError::Pasteboard(
+            "failed to set source marker for loop prevention".into(),
+        ));
+    }
 
     let uti = uti_for_content(data, media_type);
 
